@@ -1,5 +1,5 @@
 KSx::Search::WildCardQuery and KSx::Search::RegexpTermQuery,
-version 0.01 (beta)
+version 0.02 (beta)
 
 
 KSx::Search::WildCardQuery provides KinoSearch with simple wild-card
@@ -32,8 +32,8 @@ This module requires perl and the following Perl modules:
 
 • Hash::Util::FieldHash::Compat
 • The development version of KinoSearch, which one can get from
-  http://www.rectangular.com/svn/kinosearch/trunk/. These modules have
-  only been tested with revision 3096.
+  http://www.rectangular.com/svn/kinosearch/trunk/, revision 4596
+  or later.
 
 
 DOCUMENTATION
@@ -52,7 +52,7 @@ Or try using man (it’s faster, in my experience):
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2008 Father Chrysostomos
+Copyright (C) 2008-9 Father Chrysostomos
 
 This program is free software; you may redistribute it or modify it
 (or both) under the same terms as perl.

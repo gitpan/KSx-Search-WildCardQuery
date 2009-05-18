@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::RegexpTermQuery;
 use base qw( KinoSearch::Search::Query );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
 fieldhashes \my( %re, %prefix, %field );
@@ -46,25 +46,25 @@ sub new {
 #    return @{ $self->{terms} };
 #}
 
-sub make_weight {
-    return KSx::Search::RegexpTermWeight->new(
+sub make_compiler {
+    return KSx::Search::RegexpTermCompiler->new(
         parent => @_
     );
 }
 
 
-package KSx::Search::RegexpTermWeight;
-use base qw( KinoSearch::Search::Weight );
+package KSx::Search::RegexpTermCompiler;
+use base qw( KinoSearch::Search::Compiler );
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
 
-fieldhashes \my ( %similarity,  %idf, %raw_impact, #%plists,
+fieldhashes \my ( %idf, %raw_impact, #%plists,
                   %terms,
                   %query_norm_factor, % normalized_impact, %tfs );
 sub new {
     my($pack, %args) = @_;
 
-    my $searcher = delete $args{searchable};
+    my $searcher = $args{searchable};
 
     # Retrieve the correct Similarity for the Query's field.
     my $sim = $args{similarity} = 
@@ -72,8 +72,7 @@ sub new {
 
     my $self = $pack->SUPER::new(%args);
 
-    $similarity{$self} = $sim;
-    my $parent = $self->get_parent;
+    my $parent = $args{parent};
 
     # Get a lexicon and find our place therein
     my( $re, $prefix ) = ($re{$parent}, $prefix{$parent});
@@ -109,13 +108,15 @@ sub new {
 	                              term => $term,
 	                              field => $field{$parent},
 	                          );
+	my $posting; my $weight;
         while (my $doc_num = $plist ->next) {
             # For efficiency’s sake, we’ll collect the results now, to
             # avoid iterating through postings (the slowest part of search-
             # ing) more than once, even though this code probably belongs
             # in RegexpTermScorer
-            my $posting = $plist->get_posting;
-            $hits{$doc_num} += $posting->get_freq * $posting->get_impact
+            my $posting ||= $plist->get_posting;
+            $hits{$doc_num} +=
+             $weight ||= $posting->get_freq * $posting->get_weight
         }
 
     } continue {
@@ -129,7 +130,7 @@ sub new {
     $terms{$self} = \@terms;
 
     # Calculate and store the IDF
-    my $max_doc = $searcher->max_doc;
+    my $max_doc = $searcher->doc_max;
     my $idf = $idf{$self} = $max_doc
     ?    1 + log( $max_doc / ( 1 + $doc_freq ) )
     :    1
@@ -143,7 +144,15 @@ sub new {
     $self;
 }
 
-sub get_similarity { $similarity{+shift} }
+sub perform_query_normalization {
+# copied from KinoSearch::Search::Weight originally
+    my ( $self, $searcher ) = @_;
+    my $sim = $self->get_similarity;
+
+    my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
+    $factor = $sim->query_norm($factor);           # factor /= norm_q
+    $self->normalize($factor);                     # impact *= factor
+}
 
 sub get_value { shift->get_parent->get_boost }
 
@@ -165,7 +174,7 @@ sub make_scorer {
 
     return KSx::Search::RegexpTermScorer->new(
 #        posting_lists => $plists{$self},
-        similarity    => $similarity{$self},
+        similarity    => $self->get_similarity,
 	weight        => $self,
     );
 }
@@ -178,20 +187,21 @@ sub highlight_spans {  # plagiarised form of TermWeight’s routine
     my $searcher   = $args{searcher};
     my $terms      = $terms{$self};
 
-    require KinoSearch::Highlight::HighlightSpan;
+    require KinoSearch::Search::Span;
 
     my @posits;
     my $weight_val = $self->get_value;
     for (@$terms) {
         my $term_vector
-            = $doc_vector->term_vector( $field_name, $_ );
+            = $doc_vector->term_vector( field => $field_name, term => $_ );
         next unless defined $term_vector;
-        my $starts = $term_vector->get_start_offsets;
-        my $ends   = $term_vector->get_end_offsets;
+        my $starts = $term_vector->get_start_offsets->to_arrayref;
+        my $ends   = $term_vector->get_end_offsets->to_arrayref;
         while (@$starts) {
-            push @posits, KinoSearch::Highlight::HighlightSpan->new(
-                start_offset => shift @$starts,
-                end_offset   => shift @$ends, 
+            my $start = shift @$starts;
+            push @posits, KinoSearch::Search::Span->new(
+                offset => $start,
+                length   => shift(@$ends)-$start, 
                 weight       => $weight_val,
             );
         }
@@ -217,7 +227,7 @@ sub new {
 	$sim{$self} = $args{similarity};
 
 	my $tfs = $tfs{$weight};
-	$doc_nums{$self} = [ sort { $$tfs{$b} <=> $$tfs{$a} } keys %$tfs ];
+	$doc_nums{$self} = [ sort { $a <=> $b } keys %$tfs ];
 	
 	$pos{$self} = -1;
 	$wv {$self} = $weight->get_value;
@@ -267,7 +277,7 @@ KSx::Search::RegexpTermQuery - Regular expression term query class for KinoSearc
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 
@@ -277,7 +287,7 @@ KSx::Search::RegexpTermQuery - Regular expression term query class for KinoSearc
         field  => 'content',
     ;
 
-    $searcher->search($query);
+    $searcher->hits($query);
     # etc.
 
 =head1 DESCRIPTION 
@@ -309,11 +319,11 @@ L<Hash::Util::FieldHash::Compat>
 
 The development version of L<KinoSearch> available at
 L<http://www.rectangular.com/svn/kinosearch/trunk>. It has only been tested 
-with revision 3096.
+with revision 4596.
 
 =head1 AUTHOR & COPYRIGHT
 
-Copyright (C) 2008 Father Chrysostomos <sprout at, um, cpan.org>
+Copyright (C) 2008-9 Father Chrysostomos <sprout at, um, cpan.org>
 
 This program is free software; you may redistribute or modify it (or both)
 under the same terms as perl.

@@ -6,21 +6,23 @@ use ExtUtils::MakeMaker;
 # WildCardQuery:
 	base                         => 0,
 #	KSx::Search::RegexpTermQuery => 0,
+	strict                       => 0,
+	warnings                     => 0,
 # RegexpTermQuery:
          base     => 0,
          Hash::Util::FieldHash::Compat        => 0,
-         KinoSearch::Highlight::HighlightSpan => 0,
+         KinoSearch::Search::Compiler         => 0,
+         KinoSearch::Search::Span             => 0,
+         KinoSearch::Search::Query            => 0,
          KinoSearch::Search::Scorer           => 0,
          KinoSearch::Search::Tally            => 0,
-         KinoSearch::Search::Weight           => 0,
          strict                               => 0,
          warnings                             => 0,
 
 # for testing:
-	base                                       => 0,
 	KinoSearch::Analysis::Tokenizer            => 0,
-	KinoSearch::InvIndex                       => 0,
-	KinoSearch::InvIndexer                     => 0,
+	KinoSearch'FieldType'FullTextType          => 0,
+	KinoSearch::Indexer                        => 0,
 	KinoSearch::Schema                         => 0,
 	KinoSearch::Searcher                       => 0,
 	KinoSearch::Store::RAMFolder               => 0,
@@ -30,11 +32,12 @@ use ExtUtils::MakeMaker;
 	warnings                                   => 0,
 );
 
-eval{require KinoSearch::Search::Scorer}
-	&& KinoSearch::Search::Scorer->can('get_doc_num')
-or $prq{KinoSearch} = 9999, print << ;
+
+eval{require KinoSearch::Search::Compiler}
+ and eval{ KinoSearch::Search::Compiler->new}, $@ !~ /blessed/
+or $prq{KinoSearch} = 9999, print <<, "\n" ;
 This module requires the development version of KinoSearch, revision
-3096 or later, which can be obtained from the following URL:
+4596 or later, which can be obtained from the following URL:
 http://www.rectangular.com/svn/kinosearch/trunk
 
 
