@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::WildCardQuery;
 use base qw( KSx::Search::RegexpTermQuery );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub new {
     my($pack, %args) = @_;
@@ -30,7 +30,7 @@ KSx::Search::WildCardQuery - Wild card query class for KinoSearch
 
 =head1 VERSION
 
-0.02
+0.03
 
 =head1 SYNOPSIS
 

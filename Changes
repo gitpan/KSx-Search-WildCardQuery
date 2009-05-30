@@ -1,4 +1,8 @@
-Revision history for KSx::Search::WildCardQuery
+Revision history for KSx::Search::WildCardQuery and ::RegexpTermQuery
+
+0.03    30 May, 2008
+        Fixed  highlight_spans  to conform to  KinoSearch’s new inter-
+        face (returns an array ref instead of list)
 
 0.02    10 May, 2008
         Updated to work with the latest KinoSearch working copy  (now

@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::RegexpTermQuery;
 use base qw( KinoSearch::Search::Query );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
 fieldhashes \my( %re, %prefix, %field );
@@ -207,7 +207,7 @@ sub highlight_spans {  # plagiarised form of TermWeight’s routine
         }
     }
 
-    return @posits;
+    return \@posits;
 }
 
 
@@ -277,7 +277,7 @@ KSx::Search::RegexpTermQuery - Regular expression term query class for KinoSearc
 
 =head1 VERSION
 
-0.02
+0.03
 
 =head1 SYNOPSIS
 

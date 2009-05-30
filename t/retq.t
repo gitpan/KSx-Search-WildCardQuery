@@ -63,11 +63,11 @@ is join(' ', sort
 	map {
 		my $start = $_->get_offset;
 		substr($first_doc, $start, $_->get_length)
-	} $q->make_compiler(searchable => $searcher)->highlight_spans(
+	} @{ $q->make_compiler(searchable => $searcher)->highlight_spans(
 		searchable => $searcher,
 		doc_vec    => $searcher->fetch_doc_vec(
 		                  $hits->next->get_doc_id
 		              ),
 		field      => 'content'
-	  )
+	  ) }
    ), 'apes grapeseed paper', 'highlight_spans';
