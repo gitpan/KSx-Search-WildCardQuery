@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::RegexpTermQuery;
 use base qw( KinoSearch::Search::Query );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
 fieldhashes \my( %re, %prefix, %field );
@@ -169,13 +169,13 @@ sub normalize { # copied from TermQuery
         = $raw_impact{$self} * $idf{$self} * $query_norm_factor;
 }
 
-sub make_scorer {
-    my ( $self, $reader ) = @_;
+sub make_matcher {
+    my $self = shift;
 
     return KSx::Search::RegexpTermScorer->new(
 #        posting_lists => $plists{$self},
-        similarity    => $self->get_similarity,
-	weight        => $self,
+        @_,
+        compiler      => $self,
     );
 }
 
@@ -212,26 +212,29 @@ sub highlight_spans {  # plagiarised form of TermWeight’s routine
 
 
 package KSx::Search::RegexpTermScorer;
-use base 'KinoSearch::Search::Scorer';
+use base 'KinoSearch::Search::Matcher';
 
 use KinoSearch::Search::Tally;
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
-fieldhashes\my(  %doc_nums, %pos, %wv,  %sim, %weight );
+fieldhashes\my(  %doc_nums, %pos, %wv,  %sim, %compiler, %tally );
 
 sub new {
 	my ($class, %args) = @_;
 #	my $plists = delete $args{posting_lists};
-	my $weight = delete $args{weight};
+	my $compiler   = delete $args{compiler};
+	my $reader     = delete $args{reader};
+	my $need_score = delete $args{need_score};
 	my $self   = $class->SUPER::new(%args);
-	$sim{$self} = $args{similarity};
+	$sim{$self} = $compiler->get_similarity;
 
-	my $tfs = $tfs{$weight};
+	my $tfs = $tfs{$compiler};
 	$doc_nums{$self} = [ sort { $a <=> $b } keys %$tfs ];
 	
 	$pos{$self} = -1;
-	$wv {$self} = $weight->get_value;
-	$weight{$self} = $weight;
+	$wv {$self} = $compiler->get_value;
+	$compiler{$self} = $compiler;
+	$tally{$self} = KinoSearch::Search::Tally->new;
 	
 	$self
 }
@@ -256,10 +259,10 @@ sub tally {
 	my $doc_nums = $doc_nums{$self};
 	return unless $pos < scalar @$doc_nums;
 
-	(my $tally = KinoSearch::Search::Tally->new)
+	(my $tally = $tally{$self})
 	 ->set_score(
 		$wv{$self} * $sim{$self}->tf(
-			$tfs{$weight{$self}}{$$doc_nums[$pos]}
+			$tfs{$compiler{$self}}{$$doc_nums[$pos]}
 		)
 	 );
 
@@ -277,7 +280,7 @@ KSx::Search::RegexpTermQuery - Regular expression term query class for KinoSearc
 
 =head1 VERSION
 
-0.03
+0.04
 
 =head1 SYNOPSIS
 
@@ -319,7 +322,7 @@ L<Hash::Util::FieldHash::Compat>
 
 The development version of L<KinoSearch> available at
 L<http://www.rectangular.com/svn/kinosearch/trunk>. It has only been tested 
-with revision 4596.
+with revision 4798.
 
 =head1 AUTHOR & COPYRIGHT
 
