@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         KSx-Search-WildCardQuery
-version:      0.04
+version:      0.05
 version_from: lib/KSx/Search/WildCardQuery.pm
 installdirs:  site
 requires:
@@ -12,10 +12,9 @@ requires:
     KinoSearch::Indexer:           0
     KinoSearch::Schema:            0
     KinoSearch::Search::Compiler:  0
+    KinoSearch::Search::Matcher:   0
     KinoSearch::Search::Query:     0
-    KinoSearch::Search::Scorer:    0
     KinoSearch::Search::Span:      0
-    KinoSearch::Search::Tally:     0
     KinoSearch::Searcher:          0
     KinoSearch::Store::RAMFolder:  0
     strict:                        0

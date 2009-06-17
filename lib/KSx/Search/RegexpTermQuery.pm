@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::RegexpTermQuery;
 use base qw( KinoSearch::Search::Query );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use Hash::Util::FieldHash::Compat 'fieldhashes';
 fieldhashes \my( %re, %prefix, %field );
@@ -65,6 +65,9 @@ sub new {
     my($pack, %args) = @_;
 
     my $searcher = $args{searchable};
+    my $reader      = $searcher->get_reader;
+    my $lex_reader  = $reader->fetch("KinoSearch::Index::LexiconReader");
+    my $post_reader = $reader->fetch("KinoSearch::Index::PostingsReader");
 
     # Retrieve the correct Similarity for the Query's field.
     my $sim = $args{similarity} = 
@@ -77,8 +80,7 @@ sub new {
     # Get a lexicon and find our place therein
     my( $re, $prefix ) = ($re{$parent}, $prefix{$parent});
     ref $re eq 'Regexp' or $re = qr/$re/; # avoid repetitive recompilation
-    my $reader = $searcher->get_reader;
-    my $lexcn  = $reader->lexicon( field => $field{$parent} );
+    my $lexcn = $lex_reader->lexicon( field => $field{$parent} );
     $lexcn->seek(defined $prefix ? $prefix : '');
     
     # iterate through it, stopping at terms that match
@@ -103,8 +105,7 @@ sub new {
         # the doc freq has to be 2, since the re matches two docs. The doc
         # freqs of the individual terms are 1 and 2, so we can’t add or
         # average them.
-#        push @plists, my $plist = $reader->posting_list(
-        my $plist = $reader->posting_list(
+        my $plist = $post_reader->posting_list(
 	                              term => $term,
 	                              field => $field{$parent},
 	                          );
@@ -214,10 +215,8 @@ sub highlight_spans {  # plagiarised form of TermWeight’s routine
 package KSx::Search::RegexpTermScorer;
 use base 'KinoSearch::Search::Matcher';
 
-use KinoSearch::Search::Tally;
-
 use Hash::Util::FieldHash::Compat 'fieldhashes';
-fieldhashes\my(  %doc_nums, %pos, %wv,  %sim, %compiler, %tally );
+fieldhashes\my(  %doc_nums, %pos, %wv,  %sim, %compiler );
 
 sub new {
 	my ($class, %args) = @_;
@@ -234,7 +233,6 @@ sub new {
 	$pos{$self} = -1;
 	$wv {$self} = $compiler->get_value;
 	$compiler{$self} = $compiler;
-	$tally{$self} = KinoSearch::Search::Tally->new;
 	
 	$self
 }
@@ -253,20 +251,13 @@ sub get_doc_num {
 	return $pos < scalar @$doc_nums ? $$doc_nums[$pos] : 0;
 }
 
-sub tally {
+sub score {
 	my $self = shift;
 	my $pos = $pos{$self};
 	my $doc_nums = $doc_nums{$self};
-	return unless $pos < scalar @$doc_nums;
-
-	(my $tally = $tally{$self})
-	 ->set_score(
-		$wv{$self} * $sim{$self}->tf(
-			$tfs{$compiler{$self}}{$$doc_nums[$pos]}
-		)
-	 );
-
-	$tally;
+	return $wv{$self} * $sim{$self}->tf(
+	  $tfs{$compiler{$self}}{$$doc_nums[$pos]}
+	);
 }
 
 
@@ -280,7 +271,7 @@ KSx::Search::RegexpTermQuery - Regular expression term query class for KinoSearc
 
 =head1 VERSION
 
-0.04
+0.05
 
 =head1 SYNOPSIS
 
@@ -321,8 +312,8 @@ string.
 L<Hash::Util::FieldHash::Compat>
 
 The development version of L<KinoSearch> available at
-L<http://www.rectangular.com/svn/kinosearch/trunk>. It has only been tested 
-with revision 4798.
+L<http://www.rectangular.com/svn/kinosearch/trunk>, revision 4810 or 
+higher.
 
 =head1 AUTHOR & COPYRIGHT
 

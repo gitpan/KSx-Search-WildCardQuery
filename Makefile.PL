@@ -14,8 +14,7 @@ use ExtUtils::MakeMaker;
          KinoSearch::Search::Compiler         => 0,
          KinoSearch::Search::Span             => 0,
          KinoSearch::Search::Query            => 0,
-         KinoSearch::Search::Scorer           => 0,
-         KinoSearch::Search::Tally            => 0,
+         KinoSearch::Search::Matcher          => 0,
          strict                               => 0,
          warnings                             => 0,
 
@@ -33,11 +32,11 @@ use ExtUtils::MakeMaker;
 );
 
 
-eval{require KinoSearch::Search::Compiler}
- and eval{ KinoSearch::Search::Compiler->new}, $@ !~ /blessed/
+eval{require KinoSearch::Search::Matcher}
+ and eval{ KinoSearch::Search::Matcher->can('score')}
 or $prq{KinoSearch} = 9999, print <<, "\n" ;
 This module requires the development version of KinoSearch, revision
-4596 or later, which can be obtained from the following URL:
+4810 or later, which can be obtained from the following URL:
 http://www.rectangular.com/svn/kinosearch/trunk
 
 

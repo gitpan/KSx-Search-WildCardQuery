@@ -4,7 +4,7 @@ use warnings;
 package KSx::Search::WildCardQuery;
 use base qw( KSx::Search::RegexpTermQuery );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub new {
     my($pack, %args) = @_;
@@ -30,7 +30,7 @@ KSx::Search::WildCardQuery - Wild card query class for KinoSearch
 
 =head1 VERSION
 
-0.04
+0.05
 
 =head1 SYNOPSIS
 
@@ -71,8 +71,8 @@ as shown in the L</SYNOPSIS>.
 L<Hash::Util::FieldHash::Compat>
 
 The development version of L<KinoSearch> available at
-L<http://www.rectangular.com/svn/kinosearch/trunk>. It has only been tested 
-with revision 4798.
+L<http://www.rectangular.com/svn/kinosearch/trunk>, revision 4810 or 
+higher.
 
 =head1 AUTHOR & COPYRIGHT
 
